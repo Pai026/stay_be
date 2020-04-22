@@ -19,12 +19,13 @@ export class RoomsService {
         private roomRepository : RoomRepository,
         @InjectRepository(UserRepository)
         private userRepository : UserRepository,
-    ){}    
-    
-    async validateUser(user:User): Promise<any> {
+    ){}
+
+    async validateUser(user:User,id:any): Promise<any> {
         const found = await this.userRepository.findOne({id:user.id})
-        console.log(found.type)
-        if(found.type === 'facilityowner'){
+        const hotel = await this.facilityRepository.findOne({id:id})
+        console.log(found.type,hotel.id)
+        if(found.type === 'facilityowner' && hotel.ownerID === found.id){
             return found
         }
         else {
@@ -34,42 +35,54 @@ export class RoomsService {
     async getRooms(filterDto:GetRoomsFilterDto):Promise<Room[]>{
         return this.roomRepository.getRooms(filterDto,this.facilityRepository);
     }
-    
+
     async getRoomById(id:number):Promise<Room>{
         const found = await this.roomRepository.findOne(id);
-        if(!found) 
+        if(!found)
         {
             throw new NotFoundException(`Room with id ${id} not found.`);
-        } 
+        }
         return found;
     }
-    
-    async createRoom(user:User,createRoomDto: CreateRoomDto,id:number){
-        if(await this.validateUser(user)){
-        return this.roomRepository.createRoom(createRoomDto,id);       
+
+    async createRoom(user:User,createRoomDto: CreateRoomDto,id:number,files:any){
+        const imgUrls=[];
+        if(await this.validateUser(user,id)){
+            for(let i=0;i<files.length;i++)
+            {
+                const imgLink = files[i].location;
+                const replaceLink = imgLink.replace("stay-cdn.s3.amazonaws.com","stay.cdn.coronasafe.network");
+                imgUrls.push(replaceLink);
+            }
+            return this.roomRepository.createRoom(createRoomDto,id,this.facilityRepository,imgUrls);
         }
     }
     async deleteRoom(user:User,id:number):Promise<void>{
-       if(await this.validateUser(user)) {
-           const result= await this.roomRepository.delete(id);
-        if(result.affected===0)
-        {
+        const result= await this.roomRepository.findOne(id);
+       if(await this.validateUser(user,result.facility.id)) {
+           if(!result)
+            {
             throw new NotFoundException(`Room with id ${id} not found.`);
-        }
+         }
+         else{
+           result.status=RoomStatus.NOT_AVAILABLE
+           await this.roomRepository.save(result);
+         }
     }
     }
 
-    async updateRoomStatus(user:User,id:number,status:RoomStatus):Promise<Room>{
-        if(await this.validateUser(user)){
+     async updateRoomStatus(user:User,id:number,status:RoomStatus):Promise<Room>{
         const room = await this.getRoomById(id);
+        if(await this.validateUser(user,room.facility.id)){
         room.status=status;
         await room.save();
         return room;}
     }
 
     async getHotelDetail(id:number):Promise<any>{
-        const room = await this.roomRepository.find({hotelId:id,status:RoomStatus.AVAILABLE})
-        const hotel = await this.facilityRepository.findOne({hotelId:id});
+        const hotel = await this.facilityRepository.findOne({id});
+        const room = await this.roomRepository.find({facility:hotel,status:RoomStatus.AVAILABLE})
+        
         console.log(room,hotel)
         if(hotel){
             return {
@@ -82,7 +95,7 @@ export class RoomsService {
         async getHotelId(id:number): Promise<any>{
             const room = await this.roomRepository.findOne({id:id})
             return {
-                data: room.hotelId
+                data: room.facility.id
             }
         }
 
@@ -90,5 +103,5 @@ export class RoomsService {
         async getPrice():Promise<any>{
             return await this.roomRepository.getPrice();
         }
-    
+
 }

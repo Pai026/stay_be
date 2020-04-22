@@ -1,11 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany, BaseEntity} from 'typeorm';
+import { Room } from 'src/rooms/entity/room.entity';
 
 @Entity('facility')
 
-export class Facility {
+export class Facility extends BaseEntity {
     
     @PrimaryGeneratedColumn()
-    hotelId:number;
+    id:number;
 
     @Column()
     ownerID: number;
@@ -41,10 +42,14 @@ export class Facility {
     @Column()
     policy:string;
 
-    @Column()
-    photos:string;
+    @Column({type:'jsonb',nullable:true})
+    photos:any;
 
     @Column()
     status:string;
+
+    @OneToMany(type => Room, room => room.facility)
+    room: Room[];
+
 
 }
