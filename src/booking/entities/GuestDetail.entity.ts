@@ -1,42 +1,40 @@
-import { PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToOne,  JoinColumn, BaseEntity, Entity, OneToMany } from "typeorm";
-import { Booking } from "./Booking.entity";
+import {
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  OneToOne,
+  JoinColumn,
+  BaseEntity,
+  Entity,
+  OneToMany,
+} from 'typeorm';
+import { Booking } from './Booking.entity';
 
 @Entity('guestdetail')
 export class GuestDetail extends BaseEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id:number;
+  @Column()
+  name: string;
 
-    @Column()
-    name:string;
+  @Column()
+  age: number;
 
-    @Column()
-    age:number;
+  @Column()
+  gender: string;
 
-    @Column()
-    gender:string;
+  @Column({ nullable: true })
+  number: number;
 
-    @Column({nullable:true})
-    number:number;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  updatedAt: Date;
 
-    @CreateDateColumn()
-    updatedAt: Date;
-
-    @ManyToOne(type => Booking, booking => booking.guestdetail)
-    @JoinColumn({name:'bookingsId'})
-    booking: Booking;
-
-
-
-
-
-
-
-
-
-
-
+  @ManyToOne((type) => Booking, (booking) => booking.guestdetail)
+  @JoinColumn({ name: 'bookingsId' })
+  booking: Booking;
 }

@@ -1,4 +1,4 @@
-import {  NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
@@ -7,8 +7,9 @@ import { join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
 Sentry.init({
-  dsn: 'https://1ece66a620394c65af3e1dcc783ecd78@o371117.ingest.sentry.io/5201888' }
-  );
+  dsn:
+    'https://1ece66a620394c65af3e1dcc783ecd78@o371117.ingest.sentry.io/5201888',
+});
 
 async function bootstrap() {
   const logger = new Logger('Coronasafe Root');
@@ -36,10 +37,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('doc', app, document);
 
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    validationError: { target: false },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      validationError: { target: false },
+    }),
+  );
 
   const port = process.env.PORT || serverConfig.port;
   await app.listen(port);

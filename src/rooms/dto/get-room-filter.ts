@@ -1,36 +1,36 @@
-import {IsOptional, IsNotEmpty} from 'class-validator';
+import { IsOptional, IsNotEmpty } from 'class-validator';
 
-export class GetRoomsFilterDto{
-    @IsOptional()
-    category:string;
+export class GetRoomsFilterDto {
+  @IsOptional()
+  category: string;
 
-    @IsNotEmpty()
-    checkin:Date;
+  @IsNotEmpty()
+  checkin: Date;
 
-    @IsNotEmpty()
-    checkout:Date;
+  @IsNotEmpty()
+  checkout: Date;
 
-    @IsOptional()
-    hotelid:number;
+  @IsOptional()
+  hotelid: number;
 
-    @IsOptional()
-    minimum:number;
+  @IsOptional()
+  minimum: number;
 
-    @IsOptional()
-    district:string;
+  @IsOptional()
+  district: string;
 
-    @IsOptional()
-    maximum:number;
+  @IsOptional()
+  maximum: number;
 
-    @IsOptional()
-    search: string;
+  @IsOptional()
+  search: string;
 
-    @IsOptional()
-    beds:number;
+  @IsOptional()
+  beds: number;
 
-    @IsOptional()
-    type:string;
+  @IsOptional()
+  type: string;
 
-    @IsOptional()
-    roomid:number;
+  @IsOptional()
+  roomid: number;
 }

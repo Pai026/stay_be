@@ -8,10 +8,10 @@ import { AuthModule } from 'src/auth/auth.module';
 import { FacilityRepository } from '../facility/facility.repository';
 import { UserRepository } from 'src/auth/user.repository';
 import { RoomRepository } from 'src/rooms/room.repository';
-import {HandlebarsAdapter, MailerModule} from "@nestjs-modules/mailer";
-import {nestMailer} from "../config/constants";
+import { HandlebarsAdapter, MailerModule } from '@nestjs-modules/mailer';
+import { nestMailer } from '../config/constants';
 @Module({
-  imports:[
+  imports: [
     TypeOrmModule.forFeature([Booking, BookingRepository]),
     TypeOrmModule.forFeature([FacilityRepository]),
     TypeOrmModule.forFeature([RoomRepository]),
@@ -24,7 +24,7 @@ import {nestMailer} from "../config/constants";
           dir: './templates',
           adapter: new HandlebarsAdapter(),
           options: {
-            strict: true
+            strict: true,
           },
         },
       }),

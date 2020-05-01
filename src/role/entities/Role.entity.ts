@@ -3,16 +3,15 @@ import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 @Entity('role')
 //@Unique(['userId'])
 export class Role {
-    
-    @PrimaryGeneratedColumn()
-    id:number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    userId: number;
+  @Column()
+  userId: number;
 
-    @Column()
-    facilityId: number;
+  @Column()
+  facilityId: number;
 
-    @Column({ length:128 })
-    role: string;
+  @Column({ length: 128 })
+  role: string;
 }

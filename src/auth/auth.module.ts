@@ -8,13 +8,13 @@ import { JwtModule } from '@nestjs/jwt';
 import * as config from 'config';
 import { AuthController } from './auth.controller';
 import { LocalStrategy, JwtStrategy } from './strategy';
-import {HandlebarsAdapter, MailerModule} from "@nestjs-modules/mailer";
-import {nestMailer} from "../config/constants";
+import { HandlebarsAdapter, MailerModule } from '@nestjs-modules/mailer';
+import { nestMailer } from '../config/constants';
 
 const jwtConfig = config.get('jwt');
 
 @Module({
-  imports:[
+  imports: [
     TypeOrmModule.forFeature([User, UserRepository]),
     PassportModule,
     JwtModule.register({
@@ -28,7 +28,7 @@ const jwtConfig = config.get('jwt');
           dir: './templates',
           adapter: new HandlebarsAdapter(),
           options: {
-            strict: true
+            strict: true,
           },
         },
       }),
@@ -36,6 +36,6 @@ const jwtConfig = config.get('jwt');
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
-  exports: [AuthService]
+  exports: [AuthService],
 })
 export class AuthModule {}

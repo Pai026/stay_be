@@ -6,17 +6,15 @@ import {
   Unique,
   ManyToOne,
   JoinColumn,
-  OneToMany
+  OneToMany,
 } from 'typeorm';
 
 import { Room } from '../../rooms/entity/room.entity';
-import {Booking} from "../../booking/entities/Booking.entity";
-
+import { Booking } from '../../booking/entities/Booking.entity';
 
 @Entity('users')
 @Unique(['email'])
 export class User {
-
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -29,7 +27,7 @@ export class User {
   @Column({ length: 128 })
   password: string;
 
-  @Column({ length:128 })
+  @Column({ length: 128 })
   type: string;
 
   @Column({ length: 128 })
@@ -38,7 +36,7 @@ export class User {
   @Column({ nullable: true })
   referal: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   resetToken: string;
 
   @Column({ nullable: true })
@@ -50,14 +48,10 @@ export class User {
   @CreateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(type => Booking, booking => booking.user)
+  @OneToMany((type) => Booking, (booking) => booking.user)
   booking: Booking[];
 
-
-
-//  @ManyToOne(type => Room, room => room.user)
-//  @JoinColumn({name: 'id'})
-//  room: Room;
-
-
+  //  @ManyToOne(type => Room, room => room.user)
+  //  @JoinColumn({name: 'id'})
+  //  room: Room;
 }

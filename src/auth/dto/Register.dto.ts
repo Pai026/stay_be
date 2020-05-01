@@ -1,5 +1,11 @@
 import { ApiModelProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class RegisterDto {
   @ApiModelProperty({ example: null })
@@ -19,7 +25,9 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   @MaxLength(49)
-  @Matches(/^(?=.*[a-z]+)(?=.*[A-Z]+)(?=.*[0-9]+)(?=.*[!@#$%^&*]).{8,}$/, { message: 'Password too Weak' })
+  @Matches(/^(?=.*[a-z]+)(?=.*[A-Z]+)(?=.*[0-9]+)(?=.*[!@#$%^&*]).{8,}$/, {
+    message: 'Password too Weak',
+  })
   password: string;
 
   @ApiModelProperty({ example: null })

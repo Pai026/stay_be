@@ -50,7 +50,8 @@
     "rxjs": "^6.5.4",
     "swagger-ui-express": "^4.1.2",
     "typeorm": "^0.2.24",
-    "uuid": "^7.0.3"
+    "uuid": "^7.0.3",
+    "prettier": "^2.0.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^6.13.2",
