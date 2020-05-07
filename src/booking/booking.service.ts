@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException, UnauthorizedException,HttpException, HttpStatus } from '@nestjs/common';
+import {  QueryBuilder, createQueryBuilder, getConnection } from "typeorm";
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookingRepository } from './booking.repository';
 import { CreateBookingDto } from './dto/CreateBookingDto.dto';
@@ -8,7 +9,7 @@ import { FacilityRepository } from 'src/facility/facility.repository';
 import { RoomRepository } from 'src/rooms/room.repository';
 import { UserRepository } from 'src/auth/user.repository';
 import { QueryFailedError, LessThanOrEqual, MoreThanOrEqual, LessThan, Between } from 'typeorm';
-
+import {MailerService} from "@nestjs-modules/mailer";
 
 @Injectable()
 export class BookingService {
@@ -23,8 +24,10 @@ export class BookingService {
         private readonly facilityRepository:FacilityRepository,
         private readonly roomRepository:RoomRepository,
         private readonly userRepository:UserRepository,
+        private readonly mailerService: MailerService,
         @InjectRepository(BookingRepository)
         private readonly bookingRepository: BookingRepository
+        
     ){}
 
 
@@ -32,7 +35,7 @@ export class BookingService {
       const found = await this.userRepository.findOne({id:user.id})
       const hotel = await this.facilityRepository.findOne({id:id})
       //console.log(found.type,hotel.hotelId)
-      if(found.type === 'facilityowner' && hotel.ownerID === found.id){
+      if((found.type === 'facilityowner' && hotel.ownerID === found.id)||(found.type === 'admin')){
           return found
       }
       else {
@@ -80,10 +83,10 @@ export class BookingService {
 
         if(createbookingDto.checkin<createbookingDto.checkout){
 
-        return this.bookingRepository.createBooking(user,createbookingDto,this.roomRepository);
+        return this.bookingRepository.createBooking(user,createbookingDto,this.roomRepository,this.mailerService,this.userRepository);
         }
         else{
-          throw new HttpException("checkin date must be less than checkout date",HttpStatus.BAD_REQUEST)
+          throw new HttpException("Invalid date",HttpStatus.BAD_REQUEST)
         }
     }
 
@@ -91,11 +94,63 @@ export class BookingService {
       async deletebooking(
         book_id: number,
       ): Promise<any> {
-        const result = await this.bookingRepository.findOne(book_id);
-    
-        if(result) {
-          result.statusBooking = "CANCELLED"
-          await this.bookingRepository.save(result);
+        const result = await this.bookingRepository.findOne({book_id})
+        if (result){
+        result.statusBooking = "CANCELLED"
+        await this.bookingRepository.save(result); 
+      
+        const book = await getConnection()
+        .createQueryBuilder()
+        .from(Booking,'bookings')
+        .innerJoin('bookings.user','user')
+             .innerJoin('bookings.room','room')
+             .innerJoin('room.facility','facility')
+             .select(['bookings.book_id','bookings.checkin','bookings.checkout','bookings.statusBooking','bookings.statusCheckin','user.name','user.email',
+                    'bookings.createdAt','bookings.updatedAt', 'room.category','room.cost','facility.name','facility.address','facility.district','facility.contact'])
+      
+        .where('bookings.book_id = :id', {id:book_id})
+        .getOne();
+          
+
+        return await this.mailerService.sendMail({
+          to: book.user.email.toLowerCase(),
+          from: process.env.FROM,
+          subject: 'Booking cancellation',
+          template: 'booking_cancellation',
+          
+                        context: {
+                          //email: user.email,
+                          userName: book.user.name,
+                         
+                          hotelName: book.room.facility.name,
+                          address: book.room.facility.address,
+                          checkin: book.checkin,
+                          checkout: book.checkout,
+                          book_id: book.book_id,
+                          type: book.room.category,
+                          phone:book.room.facility.contact
+                            
+
+                        }
+
+
+                      })
+                      
+                      .then(async () => {
+                          return {
+                              success:true,
+                              message:"booking cancelled",
+                                
+                          };
+                        }).catch(() => {
+                            return {
+                              success: false,
+                              message: 'Something went wrong...!'
+                            };
+                          });
+                    
+        
+          
         }
         else {
           throw new NotFoundException(`Task with ID "${book_id}" not found`);
@@ -135,7 +190,7 @@ export class BookingService {
       //get all booking details for given user
       async getHotelBookingDetails(user:User,hotelId:number): Promise<any> {
         if(await this.validateUser(user,hotelId)) {
-
+          
         return this.bookingRepository.getHotelBookingDetails(user,hotelId);
 
         }

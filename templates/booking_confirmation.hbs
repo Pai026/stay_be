@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <title></title>
+  <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+  <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
+
+  <style>
+    @media only screen and (min-width: 768px) {
+      .resp {
+        width: 75%;
+      }
+    }
+
+    @media only screen and (min-width: 992px) {
+      .resp {
+        width: 50%;
+      }
+    }
+
+    .text-gray-600 {
+      color: #718096
+    }
+
+    .bg-gray-200 {
+      background-color: rbg(226, 232, 240, .75);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-200 " style="font-family: 'Roboto';">
+  <div class="flex flex-wrap">
+    <div class=" bg-white mx-auto mb-1 mt-10 sm:px-2 md:px-4 s py-4 resp">
+      <div class=" w-full mr-auto mb-1 px-6 mt-6">
+        <div class="flex flex-row">
+          <div>
+            <img src="https://img.icons8.com/material/50/000000/person-at-home.png" />
+          </div>
+          <div>
+            <p class="text-2xl font-medium mt-4 ml-1 text-gray-900">Stay</p>
+          </div>
+        </div>
+      </div>
+      <div class="w-full mr-auto mb-1 px-6">
+        <div class="text-2xl font-semibold">Customer Reciept</div>
+        <div class="text-xs font-normal text-gray-600">Your
+          reservation is now confirmed
+        </div>
+      </div>
+      <div class="w-full mr-auto mb-1 px-6 py-6">
+        <p style="font-family:roboto" class="text-xl font-normal leading-relaxed text-gray-800 antialiased"> Hey
+          {{userName}},<br> Thanks for booking with us - your reservation is now
+          confirmed <span class="text-xl">✔</span>
+        </p>
+      </div>
+      <div class="w-full mr-auto mt-2 px-6">
+        <div class="text-2xl font-semibold">Booking Details</div>
+      </div>
+      <div class="w-full mr-auto mb-1 px-6 py-6">
+
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Booking Id</div>
+          <div class="w-1/2 text-right break-all">{{book_id}}</div>
+        </div>
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Booked By</div>
+          <div class="w-1/2 text-right break-all">{{userName}}</div>
+        </div>
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Number of Guests</div>
+          <div class="w-1/2 text-right break-all">{{numberOfGuests}}</div>
+        </div>
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Hotel</div>
+          <div class="w-1/2 text-right break-all">{{hotelName}}</div>
+        </div>
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Address</div>
+          <div class="w-1/2 text-right break-all">{{address}}</div>
+        </div>
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Room Type</div>
+          <div class="w-1/2 text-right break-all">{{type}}</div>
+        </div>
+        <div class="flex mb-4">
+          <div class="w-1/2 text-gray-600">Hotel Contact</div>
+          <div class="w-1/2 text-right">{{phone}}</div>
+        </div>
+
+      </div>
+      <div class="w-full mx-auto mb-4 mt-1">
+        <table class="table-fixed mx-auto">
+          <thead class="bg-gray-700 text-white">
+            <tr class="text-sm sm:text-base">
+              <th class="border px-2 py-2 text-left">Name</th>
+              <th class="border px-2 py-2 text-left">Gender</th>
+              <th class="border px-2 py-2 text-left">Age</th>
+              <th class="border px-2 py-2 text-left">Mobile</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each guestdetail}}
+            <tr class="text-xs sm:text-sm border-b">
+              <td class="pr-2 py-2 text-left text-sm break-all">{{name}}</td>
+              <td class="px-2 py-2 text-left text-sm">{{gender}}</td>
+              <td class="px-2 py-2 text-left text-sm">{{age}}</td>
+              <td class="pl-2 py-2 text-left text-sm break-all">{{number}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+      <div class="w-full mx-auto mb-1 px-6 py-1">
+        <hr>
+      </div>
+      <div class="w-full mx-auto px-6 py-1">
+        <div class="flex mb-4 text-center">
+          <div class="w-2/5 ">
+            <p class="text-gray-600"> CHECK-IN</p>
+            <p class="font-medium text-lg">{{checkin}}</p>
+          </div>
+          <div class="w-1/5 text-gray-600"><br>&gt;&gt;&gt;&gt;</div>
+          <div class="w-2/5 ">
+            <p class="text-gray-600">CHECK-OUT</p>
+            <p class="font-medium text-lg">{{checkout}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="w-full mx-auto mb- px-6 py-1">
+        <hr>
+      </div>
+      <div class="w-full mx-auto mb-4 px-6 py-1">
+        <img class="mx-auto" src="https://cdn.coronasafe.network/break-chain.png" width="150px">
+      </div>
+      <div class="w-full mx-auto bg-gray-200 bg-opacity-75">
+        <a href="https://coronasafe.network/"><img class="mx-auto"
+            src="https://cdn.coronasafe.network/coronaSafeLogo.png" width="130px" alt="coronaSafeLogo">
+      </div>
+    </div>
+
+
+  </div>
+</body>
+
+</html>

@@ -23,7 +23,7 @@ export class FacilityService {
         console.log(user)
         const found = await this.userRepository.findOne({id:user.id})
         console.log(found.type,found.email)
-        if(found.type === 'facilityowner'){
+        if((found.type === 'facilityowner')||(found.type === 'admin')){
             return found
         }
         else {
@@ -36,33 +36,49 @@ export class FacilityService {
         const hotel = await this.facilityRepository.findOne({id:id})
         console.log(hotel)
         console.log(found)
-        if(found.type === 'facilityowner' && hotel.ownerID === found.id){
+        if((found.type === 'facilityowner' && hotel.ownerID === found.id)||(found.type === 'admin')){
             return found
         }
         else {
             throw new UnauthorizedException;
         }
     }
-    async addfacility(data:any,user:User,files:any): Promise<any> {
+   async addfacility(data:any,user:User,files:any): Promise<any> {
+        try{
                 const imgUrls=[];
-                if(await this.validateUser(user)) {
-                console.log(user)
-                data.ownerID=user.id;
-                for(let i=0;i<files.length;i++)
+                const coronasafe_cdn = process.env.CDN_URL;
+                const s3Urls = process.env.S3_URLS.split(",");
+                let replaceLink;
+                if(await this.validateUser(user))
                 {
-                    const imgLink = files[i].location;
-                    const replaceLink = imgLink.replace("stay-cdn.s3.amazonaws.com","stay.cdn.coronasafe.network");
-                    imgUrls.push(replaceLink);
+                    data.ownerID=user.id;
+                    if(files)
+                    {
+                        for(let i=0;i<files.length;i++)
+                        {
+                            const imgLink = files[i].location;
+                            for(const k in s3Urls)
+                            {
+                                if(imgLink.includes(s3Urls[k]))
+                                {
+                                    replaceLink = imgLink.replace(s3Urls[k],coronasafe_cdn);
+                                    imgUrls.push(replaceLink);
+                                }
+                            }
+    
+                        }
+                    }
+                    return this.facilityRepository.createFacility(data,user.id,imgUrls);
                 }
-                return this.facilityRepository.createFacility(data,user.id,imgUrls);
-
-                
+                else
+                {
+                    throw new HttpException("Action Forbidden",HttpStatus.FORBIDDEN);
+                }
+            
+            } catch(e)
+            {
+                return e;
             }
-            else{
-                throw new HttpException("Action Forbidden",HttpStatus.FORBIDDEN);
-            }
-        
-        
     }
 
     async getAllFacility(): Promise<any> {
@@ -129,13 +145,14 @@ export class FacilityService {
 
     }
     async updateFacility(user:User,id:number,data:any): Promise <any> {
+        const  L=['Thiruvananthapuram','Ernakulam','Kollam','Kannur','Kozhikode','Kottayam','Thrissur','Idukki','Malappuram','Palakkad','Kasaragod','Alappuzha','Pathanamthitta','Wayanad']
         if(await this.findHotel(user,id)){
         const facility = await this.facilityRepository.findOne({id:id })
         if(facility){
             if(data.name) {
                 facility.name=data.name
             }
-            if(data.facilities===null || data.facilities) {
+            if(data.facilities==="" || data.facilities) {
                 facility.facilities=data.facilities
             }
             if(data.address) {
@@ -151,7 +168,9 @@ export class FacilityService {
                 facility.panchayath = data.panchayath
             }
             if(data.district){
-                facility.district=data.district
+                if(L.includes(data.district)){
+                    facility.district=data.district
+                }
             }
             if(data.policy){
                 facility.policy=data.policy;
@@ -207,3 +226,4 @@ export class FacilityService {
         return await this.facilityRepository.getDistricts();
     }
 }
+

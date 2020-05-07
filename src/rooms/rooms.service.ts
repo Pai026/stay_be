@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException} from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, HttpException, HttpStatus} from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { GetRoomsFilterDto } from './dto/get-room-filter';
 import {RoomRepository} from './room.repository';
@@ -25,7 +25,7 @@ export class RoomsService {
         const found = await this.userRepository.findOne({id:user.id})
         const hotel = await this.facilityRepository.findOne({id:id})
         console.log(found.type,hotel.id)
-        if(found.type === 'facilityowner' && hotel.ownerID === found.id){
+        if((found.type === 'facilityowner' && hotel.ownerID === found.id)||(found.type === 'admin')){
             return found
         }
         else {
@@ -45,16 +45,39 @@ export class RoomsService {
         return found;
     }
 
-    async createRoom(user:User,createRoomDto: CreateRoomDto,id:number,files:any){
-        const imgUrls=[];
-        if(await this.validateUser(user,id)){
-            for(let i=0;i<files.length;i++)
+       async createRoom(user:User,createRoomDto: CreateRoomDto,id:number,files:any){
+        try
+        {
+            const imgUrls=[];
+	        const s3Urls = process.env.S3_URLS.split(",");
+            const coronasafe_cdn= process.env.CDN_URL;
+            let replaceLink;
+            if(await this.validateUser(user,id))
             {
-                const imgLink = files[i].location;
-                const replaceLink = imgLink.replace("stay-cdn.s3.amazonaws.com","stay.cdn.coronasafe.network");
-                imgUrls.push(replaceLink);
+                if(files)
+                {
+                    for(let i=0;i<files.length;i++)
+                    {
+                        const imgLink = files[i].location;
+                        for(const k in s3Urls)
+                         {
+                                if(imgLink.includes(s3Urls[k]))
+                                {
+                                    replaceLink = imgLink.replace(s3Urls[k],coronasafe_cdn);
+                                    imgUrls.push(replaceLink);
+                                }
+                         }
+                     }
+			
+	            }
+                return this.roomRepository.createRoom(createRoomDto,id,this.facilityRepository,imgUrls);
             }
-            return this.roomRepository.createRoom(createRoomDto,id,this.facilityRepository,imgUrls);
+            else
+            {
+                throw new HttpException("Action Forbidden",HttpStatus.FORBIDDEN);
+            }
+        }catch(e){
+            return e;
         }
     }
     async deleteRoom(user:User,id:number):Promise<void>{
