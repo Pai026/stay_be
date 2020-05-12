@@ -10,6 +10,8 @@ import { RoomRepository } from 'src/rooms/room.repository';
 import { UserRepository } from 'src/auth/user.repository';
 import { QueryFailedError, LessThanOrEqual, MoreThanOrEqual, LessThan, Between } from 'typeorm';
 import {MailerService} from "@nestjs-modules/mailer";
+import { IsDateString } from 'class-validator';
+import { isDate } from 'util';
 
 @Injectable()
 export class BookingService {
@@ -35,7 +37,7 @@ export class BookingService {
       const found = await this.userRepository.findOne({id:user.id})
       const hotel = await this.facilityRepository.findOne({id:id})
       //console.log(found.type,hotel.hotelId)
-      if(found.type === 'facilityowner' && hotel.ownerID === found.id){
+      if((found.type === 'facilityowner' && hotel.ownerID === found.id)||(found.type === 'admin')){
           return found
       }
       else {
@@ -51,42 +53,52 @@ export class BookingService {
         user:User,
         createbookingDto: CreateBookingDto,
         ): Promise<any>{
-       //  const { roomid,checkin,checkout } = createbookingDto;
-       // const found = await this.roomRepository.findOne({id:roomid})
-      //  const booking = Booking;
-       // if (found) {
-      //    const book = await this.bookingRepository.find({
-       //     where: [ 'booking.room = found && book.statusBooking === "BOOKED"]
-       //   })
-       // }
-        
+          const { roomid,checkin,checkout ,guestdetails} = createbookingDto;
 
+            var date1 = new Date(checkin);
+            var date2 = new Date(checkout);         
+            
 
-        /* const book = await this.bookingRepository.find({
-            where: [
-                {roomId:createbookingDto.roomid,checkin:LessThanOrEqual(createbookingDto.checkin) ,checkout:MoreThanOrEqual(createbookingDto.checkout)},
-                {roomId:createbookingDto.roomid,checkin:LessThan(createbookingDto.checkin) ,checkout:MoreThanOrEqual(createbookingDto.checkout)},
-                {roomId:createbookingDto.roomid,checkin:MoreThanOrEqual(createbookingDto.checkin) ,checkout:LessThanOrEqual(createbookingDto.checkout)},
-                {roomId:createbookingDto.roomid,checkin:Between(createbookingDto.checkin,createbookingDto.checkout)},
-                {roomId:createbookingDto.roomid,checkin:LessThanOrEqual(createbookingDto.checkin),checkout:Between(createbookingDto.checkin,createbookingDto.checkout)} ,                   
+          if ((date1.toDateString())=== "Invalid Date")
+          {
+            throw new HttpException({detail:"Invalid date"},HttpStatus.BAD_REQUEST)
+          }
 
-              ],
-        });
-        console.log(book)
-        if(book.length === 0){
-        return this.bookingRepository.createBooking(user,createbookingDto,this.roomRepository);        
+          if ((date2.toDateString())=== "Invalid Date")
+          {
+            throw new HttpException({detail:"Invalid date"},HttpStatus.BAD_REQUEST)
+          }
+
+          if(guestdetails.length != 0  ) {
+            for (var i=0;i<guestdetails.length;i++)
+            {
+              if ((guestdetails[i].age) <= 0 && (guestdetails[i].age > 125) )
+             {
+                  throw new HttpException({detail:"Invalid age"},HttpStatus.BAD_REQUEST)
+
+              }  
+              
+              if(!["MALE","FEMALE","OTHER"].includes(guestdetails[i].gender))
+              {
+                throw new HttpException({detail:"Invalid gender"},HttpStatus.BAD_REQUEST)
+
+            } 
+            const pattern = /^((\+91|91|0)[\- ]{0,1})?[456789]\d{9}$/;
+          if ((! pattern.test(String(guestdetails[i].number))) && (String( guestdetails[i].number)!="null")){
+            throw new HttpException({detail:"Invalid mobile number"},HttpStatus.BAD_REQUEST)
+          }
+        }
         }
         else {
-          throw new HttpException("Room already booked",HttpStatus.FORBIDDEN)
-        }*/
-
+          throw new HttpException({detail:"enter details"},HttpStatus.BAD_REQUEST)
+        }
 
         if(createbookingDto.checkin<createbookingDto.checkout){
 
         return this.bookingRepository.createBooking(user,createbookingDto,this.roomRepository,this.mailerService,this.userRepository);
         }
         else{
-          throw new HttpException("checkin date must be less than checkout date",HttpStatus.BAD_REQUEST)
+          throw new HttpException("Invalid date",HttpStatus.BAD_REQUEST)
         }
     }
 
@@ -110,11 +122,24 @@ export class BookingService {
       
         .where('bookings.book_id = :id', {id:book_id})
         .getOne();
+
+        const date1 =new Date(book.checkout)
+         const date2 =new Date(book.checkin)
+
+         const monthcheckin = date2.getMonth();
+         const daycheckin = date2.getDate();
+         const yearcheckin = date2.getFullYear();
+         const checkindate = yearcheckin + "-" + monthcheckin + "-" +daycheckin;
+
+         const monthcheckout = date1.getMonth();
+         const daycheckout = date1.getDate();
+         const yearcheckout = date1.getFullYear();
+         const checkoutdate = yearcheckout + "-" + monthcheckout + "-" +daycheckout;
           
 
         return await this.mailerService.sendMail({
           to: book.user.email.toLowerCase(),
-          from: 'stay@robot.coronasafe.network',
+          from: process.env.FROM,
           subject: 'Booking cancellation',
           template: 'booking_cancellation',
           
@@ -124,8 +149,8 @@ export class BookingService {
                          
                           hotelName: book.room.facility.name,
                           address: book.room.facility.address,
-                          checkin: book.checkin,
-                          checkout: book.checkout,
+                          checkin: checkindate,
+                          checkout: checkoutdate,
                           book_id: book.book_id,
                           type: book.room.category,
                           phone:book.room.facility.contact

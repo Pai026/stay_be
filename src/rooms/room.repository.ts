@@ -5,6 +5,10 @@ import { GetRoomsFilterDto } from './dto/get-room-filter';
 import { FacilityRepository } from 'src/facility/facility.repository';
 import { Booking } from 'src/booking/entities/Booking.entity';
 
+import { User } from 'src/auth/entities/User.entity';
+
+import { UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+
 
 @EntityRepository(Room)
 export class RoomRepository extends Repository<Room>{
@@ -14,12 +18,12 @@ export class RoomRepository extends Repository<Room>{
         facilityRepository:FacilityRepository,
         ):Promise<any>{
         
-        const {beds,category,search,minimum,maximum,district,checkin,checkout,type,hotelid,roomid} = filterDto;
+        const {beds,category,search,minimum,maximum,district,checkin,checkout,type,hotelid,roomid,sort} = filterDto;
         const notAvailable= [];
         //if filter type is hotel
         if(type.localeCompare("hotel")===0){
 
-        const query = this.createQueryBuilder('room').innerJoin('room.facility','facility').select(['facility.id','room.id','facility.status']).where('facility.status = :ACTIVE',{ACTIVE:'ACTIVE'});
+        const query = this.createQueryBuilder('room').innerJoin('room.facility','facility').select(['facility.id','room.id','facility.status']).where('facility.status = :ACTIVE',{ACTIVE:'ACTIVE'}).andWhere('room.status =:AVAILABLE',{AVAILABLE:'AVAILABLE'});
 
        
         if(district)
@@ -67,6 +71,15 @@ export class RoomRepository extends Repository<Room>{
         if(search){
             query.andWhere('(room.title LIKE :search OR room.description LIKE :search OR room.status LIKE :search)',{search: `%${search}%`});
         }
+        if(sort){
+        if(sort === 'low_to_high')
+        query.orderBy("room.cost","ASC")
+        else if(sort === 'high_to_low')
+        query.orderBy("room.cost","DESC")
+        else{
+            throw new HttpException("enter valid sort string",HttpStatus.NOT_FOUND)
+
+        }}
 
     const[room,count]= await query.getManyAndCount();
     //from all the rooms extract unique hotel id's
@@ -90,14 +103,15 @@ export class RoomRepository extends Repository<Room>{
     {
         for(const j in hotels[i].photos)
         {
-            hotels[i].photos[j] = `https://${process.env.CDN_URL}/${hotels[i].photos[j]}`;
+            if(!hotels[i].photos[j].includes('/'))
+                hotels[i].photos[j] = `https://${process.env.CDN_URL}/${hotels[i].photos[j]}`;
         }
     }
     return hotels;
     } //if filter type is rooms or something
     else {
         //query to find rooms based on check in and check out
-        const query = this.createQueryBuilder('room');
+        const query = this.createQueryBuilder('room').where('room.status =:AVAILABLE',{AVAILABLE:'AVAILABLE'});
         if(checkin && checkout)
 
         { 
@@ -114,11 +128,11 @@ export class RoomRepository extends Repository<Room>{
          if(bookId.length>0)
          {
                 if(hotelid){
-                    query.where("room.id NOT IN (:...ids) AND room.facility.id = :hotelId",{ids:notAvailable,hotelId:hotelid});
+                    query.andWhere("room.id NOT IN (:...ids) AND room.facility.id = :hotelId",{ids:notAvailable,hotelId:hotelid});
                 }
                 if(roomid)
                 {
-                    query.where("room.id NOT IN (:...ids) AND room.id = :roomId",{ids:notAvailable,roomId:roomid});
+                    query.andWhere("room.id NOT IN (:...ids) AND room.id = :roomId",{ids:notAvailable,roomId:roomid});
                 }
          }
          else{
@@ -154,8 +168,9 @@ export class RoomRepository extends Repository<Room>{
             for(const i in rooms)
             {
                 for(const j in rooms[i].photos)
-                {
-                    rooms[i].photos[j] = `https://${process.env.CDN_URL}/${rooms[i].photos[j]}`;
+                {   
+                    if(!rooms[i].photos[j].includes('/'))
+                        rooms[i].photos[j] = `https://${process.env.CDN_URL}/${rooms[i].photos[j]}`;
                 }
             }
             return rooms;
@@ -208,4 +223,40 @@ export class RoomRepository extends Repository<Room>{
         }
         return roomId;
     }
+    async validateUserFacility(user:any,id:any): Promise<any>{
+        
+        const query = this.createQueryBuilder('room');
+            query.innerJoin('room.facility','facility')
+                .select(['facility.id','room.id','facility.ownerID'])
+                .where('room.id = :id and facility.ownerID = :userid', {id:id,userid:user.id})
+            const result = await query.getOne()
+            
+            if(user.type==='facilityowner' && result)
+            {
+                return result;
+            }
+            else{
+                throw new UnauthorizedException();
+            }
+    }
+    async replaceImageUrl(files:any): Promise<any>
+    {
+        const imgUrls=[];
+        const s3Urls = process.env.S3_URLS.split(",");
+        let replaceLink;
+        for(let i=0;i<files.length;i++)
+        {
+            const imgLink = files[i].location;
+            for(const k in s3Urls)
+                {
+                    if(imgLink.includes(s3Urls[k]))
+                    {
+                        replaceLink = imgLink.replace(`https://${s3Urls[k]}/`,"");
+                        imgUrls.push(replaceLink);
+                    }
+                }
+        }
+          return imgUrls;
+    }
 }
+
